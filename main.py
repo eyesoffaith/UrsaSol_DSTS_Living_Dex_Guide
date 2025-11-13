@@ -91,7 +91,7 @@ def main():
                               .rename({"from_digimon_id":"id"})
     add_to_digi_count(digi_gen_1)
 
-    # TODO: Potentially incorrect. Inconsistent values every run???
+    # TODO: Potentially incorrect. Inconsistent values between runs???
     for gen in generation_list:
         digi_for_gen = df_digi_chart.filter(pl.col("to_generation") == gen)\
                                     .select("to_digimon_id").unique()\
