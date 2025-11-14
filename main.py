@@ -1,6 +1,5 @@
 # TODO: Consider re-writting without using DataFrames. Not worth the performance gains likely
 # TODO: Digimon with mode changes between the same generation are not properly recorded (i.e. Ceresmon/Cersmon Medium, Bacchusmon/Bacchusmon DM)
-#     - Ranamon/Calmaramon are not affected by this. Despite the game listing them both as "Hybrid" generation, their generation ids are different (i.e. 10 and 11 respectively)
 
 import polars as pl
 import pprint as pp
