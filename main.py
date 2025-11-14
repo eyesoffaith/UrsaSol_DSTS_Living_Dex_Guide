@@ -1,9 +1,12 @@
 # TODO: Consider re-writting without using DataFrames. Not worth the performance gains likely
 # TODO: Digimon with mode changes between the same generation are not properly recorded (i.e. Ceresmon/Cersmon Medium, Bacchusmon/Bacchusmon DM)
+# TODO: Decrypt live save, check for progress of live dex and adjust needed digimon.
+#   - Force reading as UTF-8 and swallowing the UnicodeEncodeError gets a decent result if we're just tracking the Digimon the player has obtained
 
 import polars as pl
 import pprint as pp
 import re
+import binascii
 
 df_data_columns = {
     "0": "id",
@@ -82,6 +85,16 @@ def update_digi_count(df_digi: pl.DataFrame, digi_ids_previous: list[str]=[]):
     
 def main():
     global df_digi_chart, df_digi_count, digi_ids_mode_change
+
+    with open("data/decrypted_save.bin", encoding='utf-8', errors="ignore") as file:
+        content = file.read()
+        matches = re.findall(r"[ \w-]+", content)
+        
+        for match in matches:
+            try:
+                print(match)
+            except UnicodeEncodeError:
+                pass
 
     df_digi_data = _cleanup_raw_columns(pl.read_csv("data/000_digimon_status_data.csv")).select(df_data_columns.keys()).rename(df_data_columns)
 
