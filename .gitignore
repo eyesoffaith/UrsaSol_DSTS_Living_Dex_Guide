@@ -1,6 +1,6 @@
 out.csv
 out.log
 data/
-gamedata/
+unpacked/
 df_digi*.csv
 MVGLTools/
