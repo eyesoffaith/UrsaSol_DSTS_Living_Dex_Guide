@@ -1,3 +1,6 @@
 out.csv
 out.log
 data/
+gamedata/
+df_digi*.csv
+MVGLTools/
