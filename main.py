@@ -157,8 +157,6 @@ def main():
         if not os.path.exists("unpacked/decrypted_saves"):
             os.mkdir("unpacked/decrypted_saves")
         decrypt_save(file_path, f"unpacked/decrypted_saves/{file_name}")
-        # cmd = ["openssl", "enc", "-d", "-aes-128-ecb", "-K", "33393632373736373534353535383833", "-in", file_path, "-out", f"unpacked/{file_name}", "-nopad"]
-        # subprocess.run(cmd)
 
     digis_from_save = extract_digimon_from_save(f"unpacked/decrypted_saves/{CHOSEN_SAVE_FILE}")
     if len(digis_from_save) == 0:
