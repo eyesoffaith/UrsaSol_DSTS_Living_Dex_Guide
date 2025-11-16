@@ -1,0 +1,460 @@
+internal_name,common_name
+char_EX-TYRANOMON,ExTyrannomon
+char_LUNAMON,Lunamon
+char_LEKISMON,Lekismon
+char_CRESCEMON,Crescemon
+char_GOLEMON,Golemon
+char_SKULLSATAMON,SkullSatamon
+char_HAGURUMON,Hagurumon
+char_MERAMON,Meramon
+char_AIRDRAMON,Airdramon
+char_GARURUMON,Garurumon
+char_BAKEMON,Bakemon
+char_STARMON,Starmon
+char_AQUILAMON,Aquilamon
+char_STRIKEDRAMON,Strikedramon
+char_MINOTAURMON,Minotarumon
+char_DORUGORAMON,Dorugoramon
+char_TYUMON,Chuumon
+char_WHAMON,Whamon
+char_DINOBEEMON,Dinobeemon
+char_MARINEANGEMON,MarineAngemon
+char_RAPTORDRAMON,Raptordramon
+char_GRADEMON,Grademon
+char_WARGREYMON,WarGreymon
+char_BIGMAMEMON,BigMamemon
+char_SANGLOUPMON,Sangloupmon
+char_MATADRMON,Matadormon
+char_GRANDDRACUMON,GranDracmon
+char_TRICERAMON,Triceramon
+char_LILITHMON,Lilithmon
+char_BEELZEBUMON,Beelzemon
+char_BARBAMON,Barbamon
+char_LEVIAMON,Leviamon
+char_DEMON,Creepymon
+char_LUCEMON_FM,Lucemon CM
+char_BELPHEMON_RM,Belphemon RM
+char_PANDAMON,Pandamon
+char_FUNBEEMON,FunBeemon
+char_BLACKTAILMON,BlackGatomon
+char_CATCHMAMEMON,CatchMamemon
+char_CHRONOMON,Chronomon HM
+char_CHRONOMON_DESTROY,Chronomon DM
+char_MEGIDRAMON,Megidramon
+char_GODDRAMON,Goldramon
+char_BANCHOLEOMON,BanchoLeomon
+char_AGUMON,Agumon
+char_GAWAPPAMON,Gawappamon
+char_KAMEMON,Kamemon
+char_KUDAMON,Kudamon
+char_GEOGREYMON,GeoGreymon
+char_GAOMON,Gaomon
+char_LALAMON,Lalamon
+char_ROSEMON,Rosemon
+char_SUNFLOWMON,Sunflowmon
+char_VOLCAMON,Volcanomon
+char_PILEVOLCAMON,PileVolcanomon
+char_MONZAEMON,Monzaemon
+char_GAOGAMON,Gaogamon
+char_PLATINUMNUMEMON,PlatinumNumemon
+char_NUMEMON,Numemon
+char_RIZEGREYMON,RizeGreymon
+char_LEOMON,Leomon
+char_LILAMON,Lilamon
+char_MACHGAOGAMON,MachGaogamon
+char_NEPTUNEMON,Neptunemon
+char_SHAWUJINMON,Shaujinmon
+char_REPPAMON,Reppamon
+char_GROWMON,Growlmon
+char_SUPERSTARMON,SuperStarmon
+char_MERCURYMON,Merukimon
+char_IMPMON,Impmon
+char_HIPPOGRIFFOMON,HippoGryphonmon
+char_GRIFFOMON,Gryphonmon
+char_TYILINMON,Chirinmon
+char_VAMDEMON,Myotismon
+char_SLEIPMON,Kentaurosmon
+char_ANGEMON,Angemon
+char_OMEGAMON,Omnimon
+char_GUILMON,Guilmon
+char_STINGMON,Stingmon
+char_TAILMON,Gatomon
+char_DEVIMON,Devimon
+char_SHINEGREYMON,ShineGreymon
+char_MIRAGEGAOGAMON,MirageGaogamon
+char_PATAMON,Patamon
+char_PICODEVIMON,DemiDevimon
+char_JUMBOGAMEMON,JumboGamemon
+char_WENDIMON,Wendigomon
+char_HOLYANGEMON,MagnaAngemon
+char_TURUIEMON,Turuiemon
+char_GANIMON,Crabmon
+char_SUSANOOMON,Susanomon
+char_DUKEMON_CM,Gallantmon CM
+char_ARMAGEMON,Armageddemon
+char_LADYDEVIMON,LadyDevimon
+char_GOBURIMON,Goblimon
+char_DORUMON,Dorumon
+char_GOLDNUMEMON,GoldNumemon
+char_V-MON,Veemon
+char_BAOHUCKMON,BaoHuckmon
+char_SAVIORHUCKMON,SaviorHuckmon
+char_VALDURMON,Varodurumon
+char_CHAOSMONVALDURARM,Chaosmon: Valdur Arm
+char_DUKEMON,Gallantmon
+char_KINGETEMON,KingEtemon
+char_TYRANTKABUTERIMON,TyrantKabuterimon
+char_DAGOMON,Dragomon
+char_COELAMON,Coelamon
+char_MEGASEADRAMON,MegaSeadramon
+char_WARUSEADRAMON,WaruSeadramon
+char_MEGAGROWLMON,WarGrowlmon
+char_METALGARURUMON,MetalGarurumon
+char_CORONAMON,Coronamon
+char_FIRAMON,Firamon
+char_FLAREMON,Flaremon
+char_LIGHDRAMON,Lighdramon
+char_WEREGARURUMON,WereGarurumon
+char_HOLSMON,Halsemon
+char_SHURIMON,Shurimon
+char_DIGMON,Digmon
+char_SABMARIMON,Submarimon
+char_PEGASMON,Pegasusmon
+char_NEFERTIMON,Nefertimon
+char_ANGEWOMON,Angewomon
+char_OROCHIMON,Orochimon
+char_CHAOSDUKEMON,ChaosGallantmon
+char_GABUMON,Gabumon
+char_RANAMON,Lanamon
+char_CALAMARAMON,Calmaramon
+char_JUPITERMON,Jupitermon
+char_JUPITERMON_WRATHMODE,Jupitermon WM
+char_JUNOMON,Junomon
+char_JUNOMON_HYSTERICMODE,Junomon HM
+char_VENUSMON,Venusmon
+char_APOLLOMON,Apollomon
+char_MARSMON,Marsmon
+char_CERESMON,Ceresmon
+char_BLUEMERAMON,BlueMeramon
+char_VULCANUSMON,Vulcanusmon
+char_BACCHUSMON,Bacchusmon
+char_PLUTOMON,Plutomon
+char_MERVAMON,Mervamon
+char_AEGIOMON,Aegiomon
+char_AEGIOCHUSMON,Aegiochusmon
+char_AEGIOCHUSMON_DARK,Aegiochusmon: Dark
+char_AEGIOCHUSMON_HOLLY,Aegiochusmon: Holy
+char_AEGIOCHUSMON_BLUE,Aegiochusmon: Blue
+char_AEGIOCHUSMON_GREEN,Aegiochusmon: Green
+char_CERESMON_MEDIUM,Ceresmon Medium
+char_RYUDAMON,Ryudamon
+char_GINRYUMON,Ginryumon
+char_HISYARYUMON,Hisyaryumon
+char_OURYUMON,Ouryumon
+char_GUNDRAMON,Gundramon
+char_BEELSTARMON,BeelStarmon
+char_PUKUMON,Pukumon
+char_CROSSMON,Eaglemon
+char_LOCOMON,Locomon
+char_ARCHNEMON,Arukenimon
+char_DRACOMON,Dracomon
+char_COREDRAMON_GR,Coredramon (Green)
+char_WINGDRAMON,Wingdramon
+char_GROUNDRAMON,Groundramon
+char_SLAYERDRAMON,Slayerdramon
+char_BREAKDRAMON,Breakdramon
+char_EXAMON,Examon
+char_DARKSUPERSTARMON,DarkSuperStarmon
+char_COREDRAMON_BL,Coredramon (Blue)
+char_KOTEMON,Kotemon
+char_MUSYAMON,Musyamon
+char_DOBERMON,Dobermon
+char_CERBERUMON,Cerberusmon
+char_CERBERUMON_WEREWOLFMODE,Cerberusmon WM
+char_ZANBAMON,Zanbamon
+char_MUMMYMON,Mummymon
+char_PHARAOHMON,Pharaohmon
+char_DELTAMON,Deltamon
+char_CHIMAIRAMON,Kimeramon
+char_MILLENNIUMON,Millenniummon
+char_BAKUMON,Tapirmon
+char_SIRENMON,Sirenmon
+char_BELIALVAMDEMON,MaloMyotismon
+char_BEARMON,Bearmon
+char_GRYZMON,Grizzlymon
+char_ASTAMON,Astamon
+char_SKULLBALUCHIMON,SkullBaluchimon
+char_OCTMON,Octomon
+char_CHOROMON,Choromon
+char_CAPROMON,Kapurimon
+char_MEGADRAMON,Megadramon
+char_METALGREYMON,MetalGreymon
+char_TENTOMON,Tentomon
+char_KABUTERIMON,Kabuterimon
+char_ATLURKABUTERIMON,MegaKabuterimon
+char_HERCULESKABUTERIMON,HerculesKabuterimon
+char_PIYOMON,Biyomon
+char_BIRDRAMON,Birdramon
+char_GARUDAMON,Garudamon
+char_HOUOUMON,Phoenixmon
+char_ETEMON,Etemon
+char_METALETEMON,MetalEtemon
+char_SUKAMON,Sukamon
+char_VEGIMON,Vegiemon
+char_SERAPHIMON,Seraphimon
+char_DODOMON,Dodomon
+char_BOTAMON,Botamon
+char_POYOMON,Poyomon
+char_WANYAMON,Wanyamon
+char_KOROMON,Koromon
+char_TOKOMON,Tokomon
+char_GREYMON,Greymon
+char_APOCLYMON,Apocalymon
+char_ANCIENTWISETMON,AncientWisemon
+char_GUARDROMON,Guardromon
+char_ANDROMON,Andromon
+char_GOMAMON,Gomamon
+char_IKKAKUMON,Ikkakumon
+char_ZUDOMON,Zudomon
+char_VIKEMON,Vikemon
+char_SEADRAMON,Seadramon
+char_PALMON,Palmon
+char_TOGEMON,Togemon
+char_LILLYMON,Lillymon
+char_PLOTMON,Salamon
+char_TYRANNOMON,Tyrannomon
+char_METALTYRANNOMON,MetalTyrannomon
+char_XV-MON,ExVeemon
+char_KUWAGAMON,Kuwagamon
+char_SHELLMON,Shellmon
+char_MONOCHROMON,Monochromon
+char_YUKIDARUMON,Frigimon
+char_MOJYAMON,Mojyamon
+char_CENTALMON,Centarumon
+char_DRIMOGEMON,Drimogemon
+char_DIGITAMAMON,Digitamamon
+char_NANIMON,Nanimon
+char_TONOSAMAGEKOMON,ShogunGekomon
+char_WIZARDMON,Wizardmon
+char_DELUMON,Deramon
+char_JYUREIMON,Cherrymon
+char_GERBEMON,Garbagemon
+char_MAGNAMON,Magnamon
+char_RUSTTYRANOMON,RustTyrannomon
+char_MUGENDRAMON,Machinedramon
+char_BUBBMON,Pabumon
+char_MOCHIMON,Motimon
+char_BETAMON,Betamon
+char_LUCEMON,Lucemon
+char_RENAMON,Renamon
+char_WORMMON,Wormmon
+char_WOODMON,Woodmon
+char_ORGEMON,Ogremon
+char_KYUBIMON,Kyubimon
+char_DORUGAMON,Dorugamon
+char_V-DRAMON,Veedramon
+char_CLOCKMON,Clockmon
+char_GEKOMON,Gekomon
+char_AEROVEEDRAMON,AeroVeedramon
+char_OKUWAMON,Okuwamon
+char_GIGADRAMON,Gigadramon
+char_GRAPLEOMON,GrapLeomon
+char_SKULLGREYMON,SkullGreymon
+char_TAOMON,Taomon
+char_DEATHMERAMON,SkullMeramon
+char_DORUGREYMON,DoruGreymon
+char_PAILDRAMON,Paildramon
+char_PANJYAMON,IceLeomon
+char_PICKLEMON,Piximon
+char_VADEMON,Vademon
+char_MAMEMON,Mamemon
+char_METALMAMEMON,MetalMamemon
+char_PARROTMON,Parrotmon
+char_ALPHAMON,Alphamon
+char_ULFORCEVDRAMON,UlforceVeedramon
+char_IMPERIALDRAMON_FM,Imperialdramon FM
+char_IMPERIALDRAMON_PM,Imperialdramon PM
+char_OPHANIMON,Ophanimon
+char_CHAOSDRAMON,Chaosdramon
+char_GRANKUWAGAMON,GranKuwagamon
+char_SABERLEOMON,SaberLeomon
+char_SAKUYAMON,Sakuyamon
+char_HIANDROMON,HiAndromon
+char_PIEDMON,Piedmon
+char_PINOCHIMON,Puppetmon
+char_PRINCEMAMEMON,PrinceMamemon
+char_BOLTMON,Boltmon
+char_METALSEADRAMON,MetalSeadramon
+char_LUCEMON_SM,Lucemon SM
+char_PUNIMON,Punimon
+char_TUNOMON,Tsunomon
+char_BELPHEMON_SM,Belphemon SM
+char_TITAMON,Titamon
+char_PLESIOMON,Plesiomon
+char_EBEMON,Ebemon
+char_CYCLONEMON,Cyclonemon
+char_HOLYDRAMON,Magnadramon
+char_WASPMON,Waspmon
+char_KARATUKINUMEMON,ShellNumemon
+char_REVOLMON,Deputymon
+char_DRACUMON,Dracmon
+char_MONODRAMON,Monodramon
+char_SKULLMAMMON,SkullMammothmon
+char_BLIMPMON,Blimpmon
+char_MASTERBLIMPMON,MasterBlimpmon
+char_DORIMON,Dorimon
+char_DINOHUMON,Dinohyumon
+char_LOADERLIOMON,LoaderLeomon
+char_JEWELBEEMON,JewelBeemon
+char_AGUMON_KIZUNA,Agumon (Bond of Bravery)
+char_GABUMON_KIZUNA,Gabumon (Bond of Friendship)
+char_GREATGRYZMON,GreatGrizzlymon
+char_CHARISMON,Callismon
+char_PYOCOMON,Yokomon
+char_TANEMON,Tanemon
+char_PUKAMON,Bukamon
+char_NYAROMON,Nyaromon
+char_YUNIMON,Unimon
+char_ELECMON,Elecmon
+char_PAGUMON,Pagumon
+char_GAZIMON,Gazimon
+char_HYOKOMON,Hyokomon
+char_BURAIMON,Buraimon
+char_BUTEN,Butenmon
+char_NANOMON,Datamon
+char_SHAMAMON,Shamamon
+char_SNOWGOBURIMON,SnowGoblimon
+char_FUGAMON,Fugamon
+char_HYOUGAMON,Hyogamon
+char_OTAMAMON,Otamamon
+char_FANTOMON,Phantomon
+char_FLYMON,Flymon
+char_MAMMON,Mammothmon
+char_RAREMON,Raremon
+char_DOKUGUMON,Dokugumon
+char_GIZAMON,Gizamon
+char_GOTTSUMON,Gotsumon
+char_PUMPMON,Pumpkinmon
+char_SNIMON,Snimon
+char_TUSKMON,Tuskmon
+char_VENOMMYOTISMON,VenomMyotismon
+char_WITCHMON,Witchmon
+char_MISTYMON,Mistymon
+char_MEDIEVALDUKEMON,MedievalGallantmon
+char_GRACENOVAMON,GraceNovamon
+char_ANOMALOCARIMON,Scorpiomon
+char_HANGYOMON,Divermon
+char_MUSHMON,Mushroomon
+char_KOKUWAMON,Kokuwamon
+char_KIWIMON,Kiwimon
+char_FLORAMON,Floramon
+char_CLAVISANGEMON,ClavisAngemon
+char_SLASHANGEMON,SlashAngemon
+char_MECHANORIMON,Mekanorimon
+char_MAGNAKIDMON,MagnaKidmon
+char_AVENGEKIDMON,AvengeKidmon
+char_TANKMON,Tankmon
+char_PENMON,Penmon
+char_MUCHOMON,Muchomon
+char_KERAMON,Keramon
+char_INFERMON,Infermon
+char_KURAMON,Kuramon
+char_KURISARIMON,Kurisarimon
+char_TSUMEMON,Tsumemon
+char_DIABOROMON,Diaboromon
+char_ALDAMON,Aldamon
+char_BEOWOLFMON,Beowolfmon
+char_MAGNAGARURUMON_SEPARATION,MagnaGarurumon (Detached)
+char_AGNIMON,Agunimon
+char_KAISERGREYMON,EmperorGreymon
+char_MAGNAGARURUMON,MagnaGarurumon
+char_VRITRAMON,BurningGreymon
+char_WOLFMON,Lobomon
+char_GARUMMON,KendoGarurumon
+char_SHOUTMON,Shoutmon
+char_OMEGASHOUTMON,OmniShoutmon
+char_HACKMON,Huckmon
+char_GANKOOMON,Gankoomon
+char_ZUBAMON,Zubamon
+char_ZUBAEAGERMON,ZubaEagermon
+char_DURAMON,Duramon
+char_DURANDAMON,Durandamon
+char_TERRIERMON,Terriermon
+char_PECKMON,Peckmon
+char_LOADKNIGHTMON,LordKnightmon
+char_GROUNDLOCOMON,GroundLocomon
+char_FALCOMON,Falcomon
+char_HAWKMON,Hawkmon
+char_ARMADILLOMON,Armadillomon
+char_TOYAGUMON,ToyAgumon
+char_SHAKOMON,Syakomon
+char_GARGOMON,Gargomon
+char_ANKYLOMON,Ankylomon
+char_FLAMEDRAMON,Flamedramon
+char_KNIGHTMON,Knightmon
+char_CYBERDRAMON,Cyberdramon
+char_SILPHYMON,Silphymon
+char_YATAGARAMON,Crowmon
+char_RAPIDMON,Rapidmon
+char_SHAKKOUMON,Shakkoumon
+char_BRAKIMON,Brachiomon
+char_ULTIMATEBRAKIMON,UltimateBrachiomon
+char_WISEMON,Wisemon
+char_CANNONBEEMON,CannonBeemon
+char_SOLARMON,Solarmon
+char_GEREMON,Geremon
+char_ICEDEVIMON,IceDevimon
+char_ANTYLAMON,Antylamon
+char_IMPERIALDRAMON_DM,Imperialdramon DM
+char_DIANAMON,Dianamon
+char_CRANIAMON,Craniamon
+char_KERPYMON_GOOD,Cherubimon (Good)
+char_JUSTIMON,Justimon
+char_DYNASMON,Dynasmon
+char_DUFTMON,Leopardmon
+char_RAVEMON,Ravemon
+char_SAINTGALGOMON,MegaGargomon
+char_LOTOSMON,Lotosmon
+char_DUFTMON_LM,Leopardmon LM
+char_GAIOMON,Gaiomon
+char_TIGERVESPAMON,TigerVespamon
+char_MINERVAMON,Minervamon
+char_MASTEMON,Mastemon
+char_JESMON,Jesmon
+char_LOPMON,Lopmon
+char_RAPIDMON_ARMOR,Rapidmon (Armor)
+char_PLATINUM_SCUMON,PlatinumSukamon
+char_BLACKKINGNUMEMON,BlackKingNumemon
+char_KUZUHAMON,Kuzuhamon
+char_SOCERIMON,Sorcermon
+char_INSEKIMON,Meteormon
+char_OMEGAMON_ZWART,Omnimon Zwart
+char_ICEMON,Icemon
+char_TUCHIDARUMON,MudFrigimon
+char_GUARDROMON_GL,Guardromon (Gold)
+char_ALPHAMON_OURYUKEN,Alphamon: Ouryuken
+char_BACCHUSMON_DRUNK,Bacchusmon DM
+char_TANKDRAMON,Tankdramon
+char_DARKDRAMON,Darkdramon
+char_CHAOSMON,Chaosmon
+char_VALKYRIMON,Valkyrimon
+char_KERPYMON_BAD,Cherubimon (Black)
+char_BEELZEMON_BM,Beelzemon BM
+char_SHINEGREYMON_BM,ShineGreymon BM
+char_MIRAGEGAOGAMON_BM,MirageGaogamon BM
+char_RAVEMON_BM,Ravemon BM
+char_ROSEMON_BM,Rosemon BM
+char_SHARKMON,Sharkmon
+char_SKULLSEADRAMON,SkullSeadramon
+char_UNDEADPLUTOMON,ZombiePlutomon
+char_SKULLBALUCHIMON_TITAMON,Titamon + SkullBaluchimon
+char_ENBARRMON,Enbarrmon
+char_ENBARRMON_CRANIAMON,Craniamon + Enbarrmon
+char_AGUMON_BK,Agumon (Black)
+char_GABUMON_BK,Gabumon (Black)
+char_GREYMON_BL,Greymon (Blue)
+char_GARURUMON_BK,Garurumon (Black)
+char_METALGREYMON_BL,MetalGreymon (Blue)
+char_WEREGARURUMON_BK,WereGarurumon (Black)
+char_METALGARURUMON_BK,MetalGarurumon (Black)
+char_BLACKWARGREYMON,BlackWarGreymon

@@ -29,7 +29,7 @@ df_chart_columns = {
 }
 
 GAME_DIR = "P:\Program Files (x86)\Steam\steamapps\common\Digimon Story Time Stranger"
-CHOSEN_SAVE_FILE = "0000.bin"
+CHOSEN_SAVE_FILE = "0006.bin"
 
 # TODO: Fix file extraction
 mvgl_file_names = ["patch.dx11", "addcont_17.dx11"]
@@ -99,8 +99,8 @@ def update_digi_count(df_digi: pl.DataFrame, digi_ids_previous: list[str]=[]):
     update_digi_count(df_digi_next, digi_ids)
     
 def extract_digimon_from_save(file_path: str):
-    regex_save_break = r"[-:+\(\) \w]+"
-    regex_digimon_extract = r"[-:+\(\) \w]{3,}mon[-:+\(\) \w]*"
+    regex_save_break = r"[-:+\(\)\& \w]+"
+    regex_digimon_extract = r"[-:+\(\)\& \w]{3,}mon[-:+\(\) \w]*"
 
     with open(file_path, encoding='shift_jis', errors="ignore") as file:
         content = file.read()
@@ -182,7 +182,7 @@ def main():
     digi_ids_mode_change = df_digi_chart.filter(pl.col("digivolution_type") == 2)["to_digimon_id"].to_list()
 
     # TODO: For viewing and debug, should be removed for release
-    digi_from_save_unpaired = df_digi_from_save.filter(pl.col("internal_name").is_null())
+    digi_from_save_unpaired = df_digi_from_save.filter(pl.col("internal_name").is_null()).sort("common_name")
     print(f"Unmatched Digimon in Save: {len(digi_from_save_unpaired)}")
     if len(digi_from_save_unpaired) > 0:
         print_df(digi_from_save_unpaired)
