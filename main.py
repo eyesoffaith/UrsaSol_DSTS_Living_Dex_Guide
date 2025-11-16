@@ -4,12 +4,15 @@
 #   - Force reading as UTF-8 and swallowing the UnicodeEncodeError gets a decent result if we're just tracking the Digimon the player has obtained
 
 import polars as pl
+import pprint as pp
 import re
 import os
-import shutil
+import sys
+import time
 import subprocess
 import glob
 import binascii
+import threading
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
@@ -28,12 +31,22 @@ df_chart_columns = {
     "5": "digivolution_type",
 }
 
-GAME_DIR = "P:\Program Files (x86)\Steam\steamapps\common\Digimon Story Time Stranger"
-CHOSEN_SAVE_FILE = "0006.bin"
+GAME_DIR = r"P:\Program Files (x86)\Steam\steamapps\common\Digimon Story Time Stranger"
+ENCRYPTION_KEY = "33393632373736373534353535383833"
+CHOSEN_SAVE_FILE = "0000.bin"
 
-# TODO: Fix file extraction
 mvgl_file_names = ["patch.dx11", "addcont_17.dx11"]
 mbe_patterns = ["digimon_status*", "evolution*"]
+csv_files = {
+    "digimon_status_data": [],
+    "digimon_evolution_data": []
+}
+csv_patterns = {
+    "digimon_status_data": f"unpacked/*/*_digimon_status_data.csv",
+    "digimon_evolution_data": f"unpacked/*/*_evolution_to.csv"
+}
+
+saves = {}
 
 fusion_digimon = {"char_DINOBEEMON":23, "char_OMEGAMON":88, "char_SUSANOOMON":104, "char_CHAOSMONVALDURARM":118, "char_EXAMON":215, "char_MILLENNIUMON":230, "char_PAILDRAMON":408, "char_GRACENOVAMON":604, "char_SILPHYMON":720, "char_SHAKKOUMON":723, "char_MASTEMON":748, "char_ALPHAMON_OURYUKEN":766, "char_CHAOSMON":772, "char_SKULLBALUCHIMON_TITAMON":915, "char_ENBARRMON_CRANIAMON":494, "char_OMEGAMON_ZWART":757}
 
@@ -43,11 +56,11 @@ df_digi_count = pl.DataFrame()
 df_digi_tracker = pl.DataFrame()
 
 def print_df(df: pl.DataFrame):
-    print(''.join([f'{col:<60}' for col in df.columns]))
+    print_and_flush(''.join([f'{col:<60}' for col in df.columns]))
     for row in df.rows():
         line = ''.join([f'{x or "":<60}' for x in row])
-        print(line)
-    print('')
+        print_and_flush(line)
+    print_and_flush('')
 
 def cleanup_raw_columns(df: pl.DataFrame):
     df.columns = [re.sub(r".* (\d+)", r"\1", col) for col in df.columns]
@@ -65,11 +78,11 @@ def add_to_digi_count(df_digi: pl.DataFrame):
     add_to_digi_tracker(df_digi)
 
     df_digi = df_digi.group_by("id").agg(pl.len().alias("count"))
-    # print("Adding to digi")
+    # print_and_flush("Adding to digi")
     # print_df(df_digi)
 
     df_digi_count = pl.concat([df_digi_count, df_digi]).group_by("id").agg(pl.col("count").sum())
-    # print("Result")
+    # print_and_flush("Result")
     # print_df(df_digi_count)
 
 def update_digi_count(df_digi: pl.DataFrame, digi_ids_previous: list[str]=[]):
@@ -98,21 +111,30 @@ def update_digi_count(df_digi: pl.DataFrame, digi_ids_previous: list[str]=[]):
 
     update_digi_count(df_digi_next, digi_ids)
     
-def extract_digimon_from_save(file_path: str):
+def extract_digimon_from_save(save: str):
     regex_save_break = r"[-:+\(\)\& \w]+"
     regex_digimon_extract = r"[-:+\(\)\& \w]{3,}mon[-:+\(\) \w]*"
 
-    with open(file_path, encoding='shift_jis', errors="ignore") as file:
+    with open(save["file_path"], encoding='shift_jis', errors="ignore") as file:
         content = file.read()
 
-        matches = re.findall(regex_save_break, content)
-        content_parts = [match for match in matches if match == match.encode("cp1252", errors="replace").decode("cp1252")]
-        content = "\n".join(content_parts).split("\n".join([f"{n}" for n in range(10)]))[0]
-        
-        return re.findall(regex_digimon_extract, content)
+    matches = re.findall(regex_save_break, content)
+    content_parts = [match for match in matches if match == match.encode("cp1252", errors="replace").decode("cp1252")]
+    content = "\n".join(content_parts).split("\n".join([f"{n}" for n in range(10)]))[0]
+    
+    digis_from_save = re.findall(regex_digimon_extract, content)
+    if not digis_from_save:
+        return pl.DataFrame()
+    
+    df_name_translate = pl.read_csv("data/digi_name_translate.csv")
+
+    return pl.DataFrame({"common_name": digis_from_save})\
+             .group_by("common_name")\
+             .agg(pl.len().alias("count"))\
+             .join(df_name_translate, on="common_name", how="left")\
+             .sort(["count", "common_name"], descending=[True, False])
 
 def decrypt_save(input_file_path: str, output_file_path: str):
-    ENCRYPTION_KEY = "33393632373736373534353535383833"
     key = binascii.unhexlify(ENCRYPTION_KEY)
 
     backend = default_backend()
@@ -120,20 +142,18 @@ def decrypt_save(input_file_path: str, output_file_path: str):
     cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=backend)
     decryptor = cipher.decryptor()
 
-    # 3. Read input and decrypt
+    # Read input and decrypt
     with open(input_file_path, 'rb') as f_in:
         ciphertext = f_in.read()
 
-    # 4. Perform decryption (ECB is block-wise, so no final block necessary)
+    # Perform decryption (ECB is block-wise, so no final block necessary)
     decrypted_data = decryptor.update(ciphertext) + decryptor.finalize()
 
-    # 5. Write output file
+    # Write output file
     with open(output_file_path, 'wb') as f_out:
         f_out.write(decrypted_data)
 
-def main():
-    global df_digi_chart, df_digi_count, digi_ids_mode_change
-
+def extract_data_from_game():
     # TODO: Save and uncomment when you can kick it off on game startup
     # if os.path.exists("./unpacked"):
     #     shutil.rmtree("./unpacked")
@@ -145,71 +165,91 @@ def main():
             for file_path in glob.glob(f"unpacked/{mvgl_file_name}.mvgl/data/{mbe_pattern}.mbe"):
                 cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked"]
                 subprocess.run(cmd)
-    digimon_status_files = glob.glob(f"unpacked/*/*_digimon_status_data.csv")
-    digimon_evolution_to_files = glob.glob(f"unpacked/*/*_evolution_to.csv")
+    for key in csv_patterns:
+        csv_files[key] = glob.glob(csv_patterns[key])
 
-    # Extract digimon from save data
-    df_name_translate = pl.read_csv("data/digi_name_translate.csv")
+def check_and_extract_saves_from_game():
+    new_saves = {}
 
-    save_files = [save_file for save_file in glob.glob(f"{GAME_DIR}/gamedata/savedata/*/*.bin") if re.match(r"\d{4}.bin", os.path.basename(save_file))]
-    for file_path in save_files:
+    save_file_paths = [save_file for save_file in glob.glob(f"{GAME_DIR}/gamedata/savedata/*/*.bin") if re.match(r"\d{4}.bin", os.path.basename(save_file))]
+    for file_path in save_file_paths:
         file_name = os.path.basename(file_path)
-        if not os.path.exists("unpacked/decrypted_saves"):
-            os.mkdir("unpacked/decrypted_saves")
-        decrypt_save(file_path, f"unpacked/decrypted_saves/{file_name}")
+        if file_name not in new_saves or os.path.getmtime(file_path) != new_saves[file_name]["last_modified"]:
+            new_saves[file_name] = {"file_path": f"unpacked/decrypted_saves/{file_name}", "last_modified": os.path.getmtime(file_path)}
+            if not os.path.exists("unpacked/decrypted_saves"):
+                os.mkdir("unpacked/decrypted_saves")
+            decrypt_save(file_path, f"unpacked/decrypted_saves/{file_name}")
 
-    digis_from_save = extract_digimon_from_save(f"unpacked/decrypted_saves/{CHOSEN_SAVE_FILE}")
-    if len(digis_from_save) == 0:
-        return
+    return new_saves
 
-    df_digi_from_save = pl.DataFrame({"common_name": digis_from_save}).group_by("common_name")\
-                                                                      .agg(pl.len().alias("count"))\
-                                                                      .join(df_name_translate, on="common_name", how="left")\
-                                                                      .sort("count", descending=[True])
-    print_df(df_digi_from_save)
+def print_and_flush(printable):
+    print(printable)
+    sys.stdout.flush()
 
-    # Build evolution data frames
-    df_digi_data = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in digimon_status_files])).select(df_data_columns.keys()).rename(df_data_columns)
+def main():
+    global df_digi_chart, digi_ids_mode_change
+    global df_digi_count, saves
 
-    df_digi_chart = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in digimon_evolution_to_files])).select(df_chart_columns.keys()).rename(df_chart_columns)
-    df_digi_chart = df_digi_chart.join(df_digi_data, left_on="from_digimon_id", right_on="id", how="inner").rename({"name": "from_name", "generation": "from_generation"})
-    df_digi_chart = df_digi_chart.join(df_digi_data, left_on="to_digimon_id", right_on="id", how="inner").rename({"name": "to_name", "generation": "to_generation"})
+    while True:
+        new_saves = check_and_extract_saves_from_game()
+        if saves != new_saves:
+            saves = new_saves
+            print_and_flush(saves)
 
-    # TODO: For viewing and debug, should be removed for release
-    df_digi_data.write_csv("df_digi_data.csv")
-    df_digi_chart.write_csv("df_digi_chart.csv")
+            extract_data_from_game()
 
-    digi_ids_mode_change = df_digi_chart.filter(pl.col("digivolution_type") == 2)["to_digimon_id"].to_list()
+            # Extract digimon from save data
+            df_digis_from_save = extract_digimon_from_save(saves[CHOSEN_SAVE_FILE])
+            if len(df_digis_from_save) == 0:
+                continue
+            df_digis_from_save.write_csv("df_digis_from_save.csv")
 
-    # TODO: For viewing and debug, should be removed for release
-    digi_from_save_unpaired = df_digi_from_save.filter(pl.col("internal_name").is_null()).sort("common_name")
-    print(f"Unmatched Digimon in Save: {len(digi_from_save_unpaired)}")
-    if len(digi_from_save_unpaired) > 0:
-        print_df(digi_from_save_unpaired)
+            df_digi_count = pl.DataFrame()
 
-    generation_list = pl.concat([df_digi_chart["from_generation"], df_digi_chart["to_generation"]]).unique().to_list()
-    generation_list.sort()
-    generation_list.remove(1) # remove gen 1, handled as a special case
+            # Build evolution data frames
+            df_digi_data = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_status_data"]])).select(df_data_columns.keys()).rename(df_data_columns)
 
-    # Handle initial case of gen 1 digimon (In-Training I)
-    digi_gen_1 = df_digi_chart.filter(pl.col("from_generation") == 1)\
-                              .select("from_digimon_id").unique()\
-                              .with_columns(pl.col("from_digimon_id").alias("origin_digimon_id"))\
-                              .rename({"from_digimon_id":"id"})
-    add_to_digi_count(digi_gen_1)
+            df_digi_chart = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_evolution_data"]])).select(df_chart_columns.keys()).rename(df_chart_columns)
+            df_digi_chart = df_digi_chart.join(df_digi_data, left_on="from_digimon_id", right_on="id", how="inner").rename({"name": "from_name", "generation": "from_generation"})
+            df_digi_chart = df_digi_chart.join(df_digi_data, left_on="to_digimon_id", right_on="id", how="inner").rename({"name": "to_name", "generation": "to_generation"})
 
-    # TODO: Potentially incorrect. Inconsistent values between runs???
-    for gen in generation_list:
-        digi_for_gen = df_digi_chart.filter(pl.col("to_generation") == gen)\
-                                    .select("to_digimon_id").unique()\
-                                    .with_columns(pl.col("to_digimon_id").alias("origin_digimon_id"))\
-                                    .rename({"to_digimon_id":"id"})
-        update_digi_count(digi_for_gen)
+            # TODO: For viewing and debug, should be removed for release
+            df_digi_data.write_csv("df_digi_data.csv")
+            df_digi_chart.write_csv("df_digi_chart.csv")
+
+            digi_ids_mode_change = df_digi_chart.filter(pl.col("digivolution_type") == 2)["to_digimon_id"].to_list()
+
+            # TODO: For viewing and debug, should be removed for release
+            digi_from_save_unpaired = df_digis_from_save.filter(pl.col("internal_name").is_null()).sort("common_name")
+            print_and_flush(f"Unmatched Digimon in Save: {len(digi_from_save_unpaired)}")
+            if len(digi_from_save_unpaired) > 0:
+                print_df(digi_from_save_unpaired)
+
+            generation_list = pl.concat([df_digi_chart["from_generation"], df_digi_chart["to_generation"]]).unique().to_list()
+            generation_list.sort()
+            generation_list.remove(1) # remove gen 1, handled as a special case
+
+            # Handle initial case of gen 1 digimon (In-Training I)
+            digi_gen_1 = df_digi_chart.filter(pl.col("from_generation") == 1)\
+                                    .select("from_digimon_id").unique()\
+                                    .with_columns(pl.col("from_digimon_id").alias("origin_digimon_id"))\
+                                    .rename({"from_digimon_id":"id"})
+            add_to_digi_count(digi_gen_1)
+
+            # TODO: Potentially incorrect. Inconsistent values between runs???
+            for gen in generation_list:
+                digi_for_gen = df_digi_chart.filter(pl.col("to_generation") == gen)\
+                                            .select("to_digimon_id").unique()\
+                                            .with_columns(pl.col("to_digimon_id").alias("origin_digimon_id"))\
+                                            .rename({"to_digimon_id":"id"})
+                update_digi_count(digi_for_gen)
+                
+            df_digi_count = df_digi_count.join(df_digi_data, on="id", how="left")
+            df_digi_count = df_digi_count.sort(["generation", "count"], descending=[False, True])
+            
+            df_digi_count.select(["id", "name", "count"]).write_csv("out.csv")
+
+        time.sleep(1)
         
-    df_digi_count = df_digi_count.join(df_digi_data, on="id", how="left")
-    df_digi_count = df_digi_count.sort(["generation", "count"], descending=[False, True])
-    
-    df_digi_count.select(["id", "name", "count"]).write_csv("out.csv")
-
 if __name__ == "__main__":
     main()
