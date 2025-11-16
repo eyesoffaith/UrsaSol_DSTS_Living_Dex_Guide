@@ -2,6 +2,11 @@
 # TODO: Digimon with mode changes between the same generation are not properly recorded (i.e. Ceresmon/Cersmon Medium, Bacchusmon/Bacchusmon DM)
 # TODO: Decrypt live save, check for progress of live dex and adjust needed digimon.
 #   - Force reading as UTF-8 and swallowing the UnicodeEncodeError gets a decent result if we're just tracking the Digimon the player has obtained
+# TODO: Dependant on data/digi_name_translate.csv to connect digimon from save file to the rest of the digimon information ripped from the game.
+#   - See if you can find out how the game connects the romanized names to the char_[JAPANESE_NAME] data
+#   - If it's a file, then we can read from it and do away with digi_name_translate.csv
+#   - It's in text/char_name.mbe, 000_Sheet1.csv
+# TODO: Digi count is non-deterministic and changes slightly every time it's run. Look into why that is and see if you can get it consistent.
 
 import polars as pl
 import pprint as pp
@@ -198,14 +203,6 @@ def main():
 
             extract_data_from_game()
 
-            # Extract digimon from save data
-            df_digis_from_save = extract_digimon_from_save(saves[CHOSEN_SAVE_FILE])
-            if len(df_digis_from_save) == 0:
-                continue
-            df_digis_from_save.write_csv("df_digis_from_save.csv")
-
-            df_digi_count = pl.DataFrame()
-
             # Build evolution data frames
             df_digi_data = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_status_data"]])).select(df_data_columns.keys()).rename(df_data_columns)
 
@@ -213,17 +210,8 @@ def main():
             df_digi_chart = df_digi_chart.join(df_digi_data, left_on="from_digimon_id", right_on="id", how="inner").rename({"name": "from_name", "generation": "from_generation"})
             df_digi_chart = df_digi_chart.join(df_digi_data, left_on="to_digimon_id", right_on="id", how="inner").rename({"name": "to_name", "generation": "to_generation"})
 
-            # TODO: For viewing and debug, should be removed for release
-            df_digi_data.write_csv("df_digi_data.csv")
-            df_digi_chart.write_csv("df_digi_chart.csv")
-
             digi_ids_mode_change = df_digi_chart.filter(pl.col("digivolution_type") == 2)["to_digimon_id"].to_list()
-
-            # TODO: For viewing and debug, should be removed for release
-            digi_from_save_unpaired = df_digis_from_save.filter(pl.col("internal_name").is_null()).sort("common_name")
-            print_and_flush(f"Unmatched Digimon in Save: {len(digi_from_save_unpaired)}")
-            if len(digi_from_save_unpaired) > 0:
-                print_df(digi_from_save_unpaired)
+            df_digi_count = pl.DataFrame()
 
             generation_list = pl.concat([df_digi_chart["from_generation"], df_digi_chart["to_generation"]]).unique().to_list()
             generation_list.sort()
@@ -244,10 +232,35 @@ def main():
                                             .rename({"to_digimon_id":"id"})
                 update_digi_count(digi_for_gen)
                 
+            # Extract digimon from save data
+            df_digi_from_save = extract_digimon_from_save(saves[CHOSEN_SAVE_FILE])
+            if len(df_digi_from_save) == 0:
+                continue
+            df_digi_from_save = df_digi_from_save.join(df_digi_data, left_on="internal_name", right_on="name").select(df_digi_from_save.columns + ["id"])
+            df_digi_from_save.write_csv("df_digi_from_save.csv")
+
             df_digi_count = df_digi_count.join(df_digi_data, on="id", how="left")
             df_digi_count = df_digi_count.sort(["generation", "count"], descending=[False, True])
             
             df_digi_count.select(["id", "name", "count"]).write_csv("out.csv")
+
+            # TODO: For viewing and debug, should be removed before release
+            df_digi_data.write_csv("df_digi_data.csv")
+            df_digi_chart.write_csv("df_digi_chart.csv")
+            df_digi_count.select(["id","name", "count"]).sort(["count", "name"], descending=[True, False]).write_csv("df_digi_count.csv")
+            df_digi_tracker.select(["origin_digimon_id","id"]).sort(["origin_digimon_id", "id"], descending=[False, False]).write_csv("df_digi_tracker.csv")
+
+            # Recreate df_digi_count from df_digi_tracker
+            df_digi_needed = df_digi_tracker.filter(~pl.col("origin_digimon_id").is_in(df_digi_from_save["id"].to_list()))\
+                                            .group_by("id")\
+                                            .agg(pl.len().alias("count"))\
+                                            .join(df_digi_data, on="id")
+            df_digi_needed.select(["id","name", "count"]).sort(["count", "name"], descending=[True, False]).write_csv("df_digi_needed.csv")
+
+            digi_from_save_unpaired = df_digi_from_save.filter(pl.col("internal_name").is_null()).sort("common_name")
+            print_and_flush(f"Unmatched Digimon in Save: {len(digi_from_save_unpaired)}")
+            if len(digi_from_save_unpaired) > 0:
+                print_df(digi_from_save_unpaired)
 
         time.sleep(1)
         
