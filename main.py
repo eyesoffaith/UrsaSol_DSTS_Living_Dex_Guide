@@ -98,8 +98,8 @@ def update_digi_count(df_digi: pl.DataFrame, digi_ids_previous: list[str]=[]):
     df_fusion = df_digi_next.filter(pl.col("is_fusion"))
     df_non_fusion = df_digi_next.filter(~pl.col("is_fusion")).group_by("origin_digimon_id")\
                                 .agg(
-                                    # When choosing which pre-digivolution to choose, choose the one that's appeared most often already
-                                    # i.e. "If you already have to farm a digimon a decent bit, then you already have a good farm for them, farm a few more" typeshit typeshit
+                                    # When choosing a pre-digivolution for the next round, choose the one that's appeared most often already
+                                    # i.e. "If you already have to farm a digimon a decent bit, then you already have a good source for them, farm a few more" typeshit typeshit
                                     pl.col("from_digimon_id").filter(pl.col("count") == pl.col("count").max()).first().alias("from_digimon_id"),
                                 )
     
