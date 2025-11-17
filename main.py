@@ -280,7 +280,7 @@ def main():
             df_digi_count.sort(["count", "name"], descending=[True, False]).write_csv("df_digi_count.csv")
             df_digi_tracker.sort(["origin_digimon_id", "generation"], descending=[False, True]).write_csv("df_digi_tracker.csv")
 
-            # Recreate df_digi_count from df_digi_tracker
+            # Calculate digimon needed
             df_digi_needed = df_digi_tracker.filter(~pl.col("origin_digimon_id").is_in(df_digi_from_save["id"].to_list()))\
                                             .group_by("id")\
                                             .agg(pl.len().alias("count"))\
