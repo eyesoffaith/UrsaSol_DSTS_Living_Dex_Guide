@@ -321,9 +321,12 @@ def main():
             df_digi_needed = df_digi_needed.filter(~pl.col("dropped"))\
                                            .group_by("id")\
                                            .agg(pl.len().alias("count"))\
-                                           .join(df_digi_data, on="id")
+                                           .join(df_digi_data, on="id")\
+                                           .join(df_digi_name, left_on="name", right_on="internal_name")\
+                                           .select(["id", "common_name", "count"])\
+                                           .rename({"common_name": "name"})
             
-            df_digi_needed.select(["id","name","count"]).sort(["count", "name"], descending=[True, False]).write_csv("df_digi_needed.csv")
+            df_digi_needed.sort(["count", "name"], descending=[True, False]).write_csv("df_digi_needed.csv")
 
             digi_from_save_unpaired = df_digi_from_save.filter(pl.col("internal_name").is_null()).sort("common_name")
             print_and_flush(f"Unmatched Digimon in Save: {len(digi_from_save_unpaired)}")
