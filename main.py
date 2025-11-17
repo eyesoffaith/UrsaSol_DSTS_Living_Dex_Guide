@@ -1,11 +1,5 @@
 # TODO: Consider re-writting without using DataFrames. Not worth the performance gains likely
 # TODO: Digimon with mode changes between the same generation are not properly recorded (i.e. Ceresmon/Cersmon Medium, Bacchusmon/Bacchusmon DM)
-# TODO: Decrypt live save, check for progress of live dex and adjust needed digimon.
-#   - Force reading as UTF-8 and swallowing the UnicodeEncodeError gets a decent result if we're just tracking the Digimon the player has obtained
-# TODO: Dependant on data/digi_name_translate.csv to connect digimon from save file to the rest of the digimon information ripped from the game.
-#   - See if you can find out how the game connects the romanized names to the char_[JAPANESE_NAME] data
-#   - If it's a file, then we can read from it and do away with digi_name_translate.csv
-#   - It's in text/char_name.mbe, 000_Sheet1.csv
 # TODO: Digi count is non-deterministic and changes slightly every time it's run. Look into why that is and see if you can get it consistent.
 
 import polars as pl
@@ -14,10 +8,10 @@ import re
 import os
 import sys
 import time
-import subprocess
 import glob
+import shutil
 import binascii
-import threading
+import subprocess
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
@@ -36,19 +30,43 @@ df_chart_columns = {
     "5": "digivolution_type",
 }
 
+df_name_columns = {
+    "0": "internal_name",
+    "1": "common_name",
+}
+
 GAME_DIR = r"P:\Program Files (x86)\Steam\steamapps\common\Digimon Story Time Stranger"
 ENCRYPTION_KEY = "33393632373736373534353535383833"
 CHOSEN_SAVE_FILE = "0000.bin"
+
+unpack_patterns = {
+    "patch.dx11.mvgl": [
+        "data/digimon_status*",
+        "data/evolution*"
+    ],
+    "addcont_17.dx11.mvgl": [
+        "data/digimon_status*",
+        "data/evolution*"
+    ],
+    "patch_text01.dx11.mvgl": [
+        "text/char_name*"
+    ],
+    "addcont_17_text01.dx11.mvgl": [
+        "text/char_name*"
+    ],
+}
 
 mvgl_file_names = ["patch.dx11", "addcont_17.dx11"]
 mbe_patterns = ["digimon_status*", "evolution*"]
 csv_files = {
     "digimon_status_data": [],
-    "digimon_evolution_data": []
+    "digimon_evolution_data": [],
+    "digimon_name_data": []
 }
 csv_patterns = {
-    "digimon_status_data": f"unpacked/*/*_digimon_status_data.csv",
-    "digimon_evolution_data": f"unpacked/*/*_evolution_to.csv"
+    "digimon_status_data": "unpacked/mbe_unpacked/digimon_status*/*_digimon_status_data.csv",
+    "digimon_evolution_data": "unpacked/mbe_unpacked/evolution*/*_evolution_to.csv",
+    "digimon_name_data": "unpacked/mbe_unpacked/char_name*/000_Sheet1.csv"
 }
 
 saves = {}
@@ -59,6 +77,7 @@ digi_ids_mode_change = []
 df_digi_chart = pl.DataFrame()
 df_digi_count = pl.DataFrame()
 df_digi_tracker = pl.DataFrame()
+df_digi_name = pl.DataFrame()
 
 def print_df(df: pl.DataFrame):
     print_and_flush(''.join([f'{col:<60}' for col in df.columns]))
@@ -131,12 +150,10 @@ def extract_digimon_from_save(save: str):
     if not digis_from_save:
         return pl.DataFrame()
     
-    df_name_translate = pl.read_csv("data/digi_name_translate.csv")
-
     return pl.DataFrame({"common_name": digis_from_save})\
              .group_by("common_name")\
              .agg(pl.len().alias("count"))\
-             .join(df_name_translate, on="common_name", how="left")\
+             .join(df_digi_name, on="common_name", how="left")\
              .sort(["count", "common_name"], descending=[True, False])
 
 def decrypt_save(input_file_path: str, output_file_path: str):
@@ -158,20 +175,41 @@ def decrypt_save(input_file_path: str, output_file_path: str):
     with open(output_file_path, 'wb') as f_out:
         f_out.write(decrypted_data)
 
+# def extract_data_from_game():
+#     # TODO: Save and uncomment when you can kick it off on game startup
+#     # if os.path.exists("./unpacked"):
+#     #     shutil.rmtree("./unpacked")
+#     for mvgl_file_name in mvgl_file_names:
+#         # TODO: Save and uncomment when you can kick it off on game startup
+#         # cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mvgl", "-i", f"{GAME_DIR}/gamedata/{mvgl_file_name}.mvgl", "-o", f"unpacked/{mvgl_file_name}.mvgl"]
+#         # subprocess.run(cmd)
+#         for mbe_pattern in mbe_patterns:
+#             for file_path in glob.glob(f"unpacked/{mvgl_file_name}.mvgl/data/{mbe_pattern}.mbe"):
+#                 cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked"]
+#                 subprocess.run(cmd)
+#     for key in csv_patterns:
+#         csv_files[key] = glob.glob(csv_patterns[key])
+
 def extract_data_from_game():
-    # TODO: Save and uncomment when you can kick it off on game startup
-    # if os.path.exists("./unpacked"):
-    #     shutil.rmtree("./unpacked")
-    for mvgl_file_name in mvgl_file_names:
+    for mvgl_file_name in unpack_patterns:
         # TODO: Save and uncomment when you can kick it off on game startup
-        # cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mvgl", "-i", f"{GAME_DIR}/gamedata/{mvgl_file_name}.mvgl", "-o", f"unpacked/{mvgl_file_name}.mvgl"]
+        # cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mvgl", "-i", f"{GAME_DIR}/gamedata/{mvgl_file_name}", "-o", f"unpacked/mvgl_unpacked/{mvgl_file_name}"]
         # subprocess.run(cmd)
-        for mbe_pattern in mbe_patterns:
-            for file_path in glob.glob(f"unpacked/{mvgl_file_name}.mvgl/data/{mbe_pattern}.mbe"):
-                cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked"]
+        for mbe_pattern in unpack_patterns[mvgl_file_name]:
+            for file_path in glob.glob(f"unpacked/mvgl_unpacked/{mvgl_file_name}/{mbe_pattern}"):
+                cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked/mbe_unpacked"]
                 subprocess.run(cmd)
     for key in csv_patterns:
         csv_files[key] = glob.glob(csv_patterns[key])
+
+    # for mvgl_file_name in mvgl_file_names:
+    #     # TODO: Save and uncomment when you can kick it off on game startup
+    #     # cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mvgl", "-i", f"{GAME_DIR}/gamedata/{mvgl_file_name}.mvgl", "-o", f"unpacked/{mvgl_file_name}.mvgl"]
+    #     # subprocess.run(cmd)
+    #     for mbe_pattern in mbe_patterns:
+    #         for file_path in glob.glob(f"unpacked/{mvgl_file_name}.mvgl/data/{mbe_pattern}.mbe"):
+    #             cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked"]
+    #             subprocess.run(cmd)
 
 def check_and_extract_saves_from_game():
     new_saves = {}
@@ -192,8 +230,14 @@ def print_and_flush(printable):
     sys.stdout.flush()
 
 def main():
-    global df_digi_chart, digi_ids_mode_change
+    global df_digi_chart, digi_ids_mode_change, df_digi_name
     global df_digi_count, saves
+
+    # Data cleanup
+    # TODO: Save and uncomment when you can kick it off on game startup
+    # if os.path.exists("unpacked"):
+    #     shutil.rmtree("unpacked")
+    # os.mkdir("unpacked")
 
     while True:
         new_saves = check_and_extract_saves_from_game()
@@ -203,12 +247,14 @@ def main():
 
             extract_data_from_game()
 
-            # Build evolution data frames
+            # Build data frames
             df_digi_data = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_status_data"]])).select(df_data_columns.keys()).rename(df_data_columns)
 
             df_digi_chart = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_evolution_data"]])).select(df_chart_columns.keys()).rename(df_chart_columns)
             df_digi_chart = df_digi_chart.join(df_digi_data, left_on="from_digimon_id", right_on="id", how="inner").rename({"name": "from_name", "generation": "from_generation"})
             df_digi_chart = df_digi_chart.join(df_digi_data, left_on="to_digimon_id", right_on="id", how="inner").rename({"name": "to_name", "generation": "to_generation"})
+
+            df_digi_name = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_name_data"]])).select(df_name_columns.keys()).rename(df_name_columns)
 
             digi_ids_mode_change = df_digi_chart.filter(pl.col("digivolution_type") == 2)["to_digimon_id"].to_list()
             df_digi_count = pl.DataFrame()
@@ -246,6 +292,7 @@ def main():
 
             # TODO: For viewing and debug, should be removed before release
             df_digi_data.write_csv("df_digi_data.csv")
+            df_digi_name.write_csv("df_digi_name.csv")
             df_digi_chart.write_csv("df_digi_chart.csv")
             df_digi_count.select(["id","name", "count"]).sort(["count", "name"], descending=[True, False]).write_csv("df_digi_count.csv")
             df_digi_tracker.select(["origin_digimon_id","id"]).sort(["origin_digimon_id", "id"], descending=[False, False]).write_csv("df_digi_tracker.csv")
