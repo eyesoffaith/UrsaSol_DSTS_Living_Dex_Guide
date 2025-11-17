@@ -64,9 +64,9 @@ csv_files = {
     "digimon_name_data": []
 }
 csv_patterns = {
-    "digimon_status_data": "unpacked/mbe_unpacked/digimon_status*/*_digimon_status_data.csv",
-    "digimon_evolution_data": "unpacked/mbe_unpacked/evolution*/*_evolution_to.csv",
-    "digimon_name_data": "unpacked/mbe_unpacked/char_name*/000_Sheet1.csv"
+    "digimon_status_data": "digimon_status*/*_digimon_status_data.csv",
+    "digimon_evolution_data": "evolution*/*_evolution_to.csv",
+    "digimon_name_data": "char_name*/000_Sheet1.csv"
 }
 
 saves = {}
@@ -175,21 +175,6 @@ def decrypt_save(input_file_path: str, output_file_path: str):
     with open(output_file_path, 'wb') as f_out:
         f_out.write(decrypted_data)
 
-# def extract_data_from_game():
-#     # TODO: Save and uncomment when you can kick it off on game startup
-#     # if os.path.exists("./unpacked"):
-#     #     shutil.rmtree("./unpacked")
-#     for mvgl_file_name in mvgl_file_names:
-#         # TODO: Save and uncomment when you can kick it off on game startup
-#         # cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mvgl", "-i", f"{GAME_DIR}/gamedata/{mvgl_file_name}.mvgl", "-o", f"unpacked/{mvgl_file_name}.mvgl"]
-#         # subprocess.run(cmd)
-#         for mbe_pattern in mbe_patterns:
-#             for file_path in glob.glob(f"unpacked/{mvgl_file_name}.mvgl/data/{mbe_pattern}.mbe"):
-#                 cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked"]
-#                 subprocess.run(cmd)
-#     for key in csv_patterns:
-#         csv_files[key] = glob.glob(csv_patterns[key])
-
 def extract_data_from_game():
     for mvgl_file_name in unpack_patterns:
         # TODO: Save and uncomment when you can kick it off on game startup
@@ -200,16 +185,7 @@ def extract_data_from_game():
                 cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked/mbe_unpacked"]
                 subprocess.run(cmd)
     for key in csv_patterns:
-        csv_files[key] = glob.glob(csv_patterns[key])
-
-    # for mvgl_file_name in mvgl_file_names:
-    #     # TODO: Save and uncomment when you can kick it off on game startup
-    #     # cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mvgl", "-i", f"{GAME_DIR}/gamedata/{mvgl_file_name}.mvgl", "-o", f"unpacked/{mvgl_file_name}.mvgl"]
-    #     # subprocess.run(cmd)
-    #     for mbe_pattern in mbe_patterns:
-    #         for file_path in glob.glob(f"unpacked/{mvgl_file_name}.mvgl/data/{mbe_pattern}.mbe"):
-    #             cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked"]
-    #             subprocess.run(cmd)
+        csv_files[key] = glob.glob(f"unpacked/mbe_unpacked/{csv_patterns[key]}")
 
 def check_and_extract_saves_from_game():
     new_saves = {}
