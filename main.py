@@ -231,7 +231,7 @@ def print_and_flush(printable):
 
 def main():
     global df_digi_chart, digi_ids_mode_change, df_digi_name
-    global df_digi_count, saves
+    global df_digi_count, df_digi_tracker, saves
 
     # Data cleanup
     # TODO: Save and uncomment when you can kick it off on game startup
@@ -258,6 +258,7 @@ def main():
 
             digi_ids_mode_change = df_digi_chart.filter(pl.col("digivolution_type") == 2)["to_digimon_id"].to_list()
             df_digi_count = pl.DataFrame()
+            df_digi_tracker = pl.DataFrame()
 
             generation_list = pl.concat([df_digi_chart["from_generation"], df_digi_chart["to_generation"]]).unique().to_list()
             generation_list.sort()
