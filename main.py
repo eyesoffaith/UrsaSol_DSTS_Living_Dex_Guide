@@ -1,5 +1,14 @@
 # TODO: Consider re-writting without using DataFrames. Not worth the performance gains likely
 # TODO: Digimon with mode changes between the same generation are not properly recorded (i.e. Ceresmon/Cersmon Medium, Bacchusmon/Bacchusmon DM)
+# TODO: Digimon in save currently only count once towards the total progress. (i.e. if it matches origin_digimon_id in df_digi_tracker)
+#  - Meaning if you have duplicates of a digimon that has been counted towards the tracker, the duplicates do not count towards progress on other digimon they could digivolve into.
+#  - To track this, you'd want to walk through the digimon from the save file 
+#    - after removing digimon already count by (origin_digimon_id)
+#    - count the highest generation creatures first as they will eliminate more digimon from the required materials
+#  - If the digimon from the save (digimon B) is a pre-digivolution for another digimon (digimon A)
+#    - grab the origin_digimon_id for digimon A
+#    - remove all digimon from digimon A's pre-digivolutions with a lower generation than digimon B
+#  - Then we can group, sum, and display the remaining as digimon the player needs to grab
 
 import polars as pl
 import pprint as pp
@@ -258,20 +267,18 @@ def main():
             df_digi_from_save = extract_digimon_from_save(saves[CHOSEN_SAVE_FILE])
             if len(df_digi_from_save) == 0:
                 continue
-            df_digi_from_save = df_digi_from_save.join(df_digi_data, left_on="internal_name", right_on="name").select(df_digi_from_save.columns + ["id"])
-            df_digi_from_save.write_csv("df_digi_from_save.csv")
 
-            df_digi_count = df_digi_count.join(df_digi_data, on="id", how="left")
-            df_digi_count = df_digi_count.sort(["generation", "count"], descending=[False, True])
-            
-            df_digi_count.select(["id", "name", "count"]).write_csv("out.csv")
+            df_digi_from_save = df_digi_from_save.join(df_digi_data, left_on="internal_name", right_on="name").select(df_digi_from_save.columns + ["id"])
+            df_digi_count = df_digi_count.join(df_digi_data, on="id", how="left").select(["id","name", "count"])
+            df_digi_tracker = df_digi_tracker.join(df_digi_data, on="id").select(["origin_digimon_id", "id", "generation"])
 
             # TODO: For viewing and debug, should be removed before release
+            df_digi_from_save.write_csv("df_digi_from_save.csv")
             df_digi_data.write_csv("df_digi_data.csv")
             df_digi_name.write_csv("df_digi_name.csv")
             df_digi_chart.write_csv("df_digi_chart.csv")
-            df_digi_count.select(["id","name", "count"]).sort(["count", "name"], descending=[True, False]).write_csv("df_digi_count.csv")
-            df_digi_tracker.select(["origin_digimon_id","id"]).sort(["origin_digimon_id", "id"], descending=[False, False]).write_csv("df_digi_tracker.csv")
+            df_digi_count.sort(["count", "name"], descending=[True, False]).write_csv("df_digi_count.csv")
+            df_digi_tracker.sort(["origin_digimon_id", "generation"], descending=[False, True]).write_csv("df_digi_tracker.csv")
 
             # Recreate df_digi_count from df_digi_tracker
             df_digi_needed = df_digi_tracker.filter(~pl.col("origin_digimon_id").is_in(df_digi_from_save["id"].to_list()))\
