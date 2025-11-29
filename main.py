@@ -1,5 +1,5 @@
-# TODO: Consider re-writting without using DataFrames. Not worth the performance gains likely
 # TODO: Digimon with mode changes between the same generation are not properly recorded (i.e. Ceresmon/Cersmon Medium, Bacchusmon/Bacchusmon DM)
+# TODO: Create UI for save selection and viewing progress
 
 # NOTE: The original generation pulled from digimon_status.csv is overwritten by my own generation value. This helps to standardize the hybrid/armor digivolutions with the rest of the data.
 
@@ -17,6 +17,8 @@ import subprocess
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+import tkinter
+import customtkinter
 
 CHOSEN_SAVE_FILE = "0000.bin"
 GAME_DIR = r"P:\Program Files (x86)\Steam\steamapps\common\Digimon Story Time Stranger"
@@ -93,7 +95,7 @@ df_digi_generations = pl.DataFrame({"internal_generation": [1,2,3,4,5,6,7,8,9,10
 def print_df(df: pl.DataFrame):
     print_and_flush(''.join([f'{col:<60}' for col in df.columns]))
     for row in df.rows():
-        line = ''.join([f'{x or "":<60}' for x in row])
+        line = ''.join([f'{"" if x is None else x:<60}' for x in row])
         print_and_flush(line)
     print_and_flush('')
 
@@ -101,8 +103,6 @@ def cleanup_raw_columns(df: pl.DataFrame):
     df.columns = [re.sub(r".* (\d+)", r"\1", col) for col in df.columns]
     return df
 
-# TODO: Finish this method
-# For some reason it's not recording every record for each digimon (i.e. EX-Tyranomon (id #1) should have 5 records (one for itself and it's four pre-digivolutions))
 def add_to_digi_tracker(df_digi: pl.DataFrame):
     global df_digi_tracker
 
@@ -326,7 +326,10 @@ def main():
                                            .select(["id", "common_name", "count"])\
                                            .rename({"common_name": "name"})
             
-            df_digi_needed.sort(["count", "name"], descending=[True, False]).write_csv("df_digi_needed.csv")
+            df_digi_needed = df_digi_needed.join(df_digi_data, on="id")\
+                                           .select(["id", "name", "generation", "count"])
+
+            df_digi_needed.sort(["generation", "count", "name"], descending=[True, True, False]).write_csv("df_digi_needed.csv")
 
             digi_from_save_unpaired = df_digi_from_save.filter(pl.col("internal_name").is_null()).sort("common_name")
             print_and_flush(f"Unmatched Digimon in Save: {len(digi_from_save_unpaired)}")
