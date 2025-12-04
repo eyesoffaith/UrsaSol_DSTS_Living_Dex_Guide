@@ -20,9 +20,14 @@ from cryptography.hazmat.primitives import padding
 import tkinter
 import customtkinter
 
+import plotly.graph_objects as go
+import networkx as nx
+import gravis as gv
+
 CHOSEN_SAVE_FILE = "0000.bin"
 GAME_DIR = r"P:\Program Files (x86)\Steam\steamapps\common\Digimon Story Time Stranger"
 ENCRYPTION_KEY = "33393632373736373534353535383833"
+GENERATION_LABELS = ["In-Training I", "In-Training II", "Rookie", "Champion", "Ultimate", "Mega", "Mega+"]
 FUSION_DIGIMON = {
  "char_DINOBEEMON":23,
  "char_OMEGAMON":88,
@@ -45,7 +50,7 @@ FUSION_DIGIMON = {
 saves = {}
 df_data_columns = {
     "0": "id",
-    "2": "name",
+    "2": "internal_name",
     "4": "generation",
     "5": "is_boss"
 }
@@ -86,6 +91,7 @@ csv_patterns = {
 }
 
 digi_ids_mode_change = []
+df_digi_data = pl.DataFrame()
 df_digi_chart = pl.DataFrame()
 df_digi_count = pl.DataFrame()
 df_digi_tracker = pl.DataFrame()
@@ -211,8 +217,183 @@ def print_and_flush(printable):
     print(printable)
     sys.stdout.flush()
 
+def plot_digi_chart():
+    edge_trace = []
+    node_trace = []
+
+    edge_x = []
+    edge_y = []
+    node_x = []
+    node_y = []
+    node_names = []
+
+    df = df_digi_chart.join(df_digi_name, left_on="from_name", right_on="internal_name")\
+        .join(df_digi_name, left_on="to_name", right_on="internal_name")\
+        .rename({"common_name": "from_common_name", "common_name_right": "to_common_name"})
+
+    for row in df.to_dicts():
+        x0, x1 = row["from_digimon_id"], row["to_digimon_id"]
+        y0, y1 = row["from_generation"], row["to_generation"]
+
+        edge_x.append(x0)
+        edge_x.append(x1)
+        edge_x.append(None)
+        edge_y.append(y0)
+        edge_y.append(y1)
+        edge_y.append(None)
+
+        # Special case to generate nodes from gen 1 digimon
+        if y0 == 1 and x0 not in node_x:
+            node_x.append(x0)
+            node_y.append(y0)
+            node_names.append(f"[{row["from_digimon_id"]}] {row["from_common_name"]}")
+        if x1 not in node_x:
+            node_x.append(x1)
+            node_y.append(y1)
+            node_names.append(f"[{row["to_digimon_id"]}] {row["to_common_name"]}")
+
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y,
+        line=dict(width=0.5, color='#888'),
+        hoverinfo='none',
+        mode='lines')
+    
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers',
+        hovertext=node_names,
+        hoverinfo='text',
+        marker=dict(
+            color=[],
+            size=10,
+            line_width=2))
+
+    fig = go.Figure(data=[edge_trace, node_trace],
+             layout=go.Layout(
+                title=dict(
+                    text="<br>Network graph made with Python",
+                    font=dict(
+                        size=16
+                    )
+                ),
+                showlegend=False,
+                hovermode='closest',
+                margin=dict(b=20,l=5,r=5,t=40),
+                xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                yaxis=dict(showgrid=False, zeroline=False, tickvals=list(range(1,8)) , ticktext=GENERATION_LABELS))
+                )
+    
+    fig.show()
+
+def plot_digi_tracker(df: pl.DataFrame):
+    edge_trace = []
+    node_trace = []
+
+    edge_x = []
+    edge_y = []
+    node_x = []
+    node_y = []
+    node_names = []
+
+    gravis_edges = {}
+    gravis_nodes = {}
+
+    df = df.join(df_digi_data, left_on="origin_digimon_id", right_on="id")\
+        .rename({"generation_right": "origin_generation", "common_name": "origin_name"})\
+        .select(["origin_digimon_id", "origin_generation", "origin_name", "generation", "id"])\
+        .join(df_digi_data, on="id")\
+        .select(["origin_digimon_id", "origin_generation", "origin_name", "generation", "id", "common_name"])\
+        .sort(["origin_digimon_id", "generation"], descending=[False, False])
+
+    row_prev = None
+    node_color = "#d3a437"
+
+    for row in df.to_dicts():
+        # if row["origin_digimon_id"] == row["id"]:
+        #     continue
+        if row_prev and row["origin_digimon_id"] != row_prev["origin_digimon_id"]:
+            node_color = "#d3a437"
+            row_prev = None
+
+        x0, x1 = row["origin_digimon_id"], row["id"]
+        y0, y1 = row["origin_generation"], row["generation"]
+
+        edge_x.append(x0)
+        edge_x.append(x1)
+        edge_x.append(None)
+        edge_y.append(y0)
+        edge_y.append(y1)
+        edge_y.append(None)
+
+
+        node_x.append(x0)
+        node_y.append(y0)
+        node_names.append(f"[{row["origin_digimon_id"]}] {row["origin_name"]}")
+        node_x.append(x1)
+        node_y.append(y1)
+        node_names.append(f"[{row["id"]}] {row["common_name"]}")
+
+        node_key = row["id"]
+        gravis_nodes[node_key] = {"metadata": {"color": node_color ,"en": f"[{row["id"]}] {row["common_name"]}"}}
+        if row_prev:
+            node_key_prev = row_prev["id"]
+            gravis_edges[f"{node_key_prev}:{node_key}"] = {"source": node_key_prev, "target": node_key}
+
+        row_prev = row
+        node_color = "#ffffff"
+
+    gravis_edges = list(gravis_edges.values())
+
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y,
+        line=dict(width=0.5, color='#888'),
+        hoverinfo='none',
+        mode='lines')
+    
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode='markers',
+        hovertext=node_names,
+        hoverinfo='text',
+        marker=dict(
+            color=[],
+            size=10,
+            line_width=2))
+
+    # fig = go.Figure(data=[edge_trace, node_trace],
+    #          layout=go.Layout(
+    #             title=dict(
+    #                 text="<br>Network graph made with Python",
+    #                 font=dict(
+    #                     size=16
+    #                 )
+    #             ),
+    #             showlegend=False,
+    #             hovermode='closest',
+    #             margin=dict(b=20,l=5,r=5,t=40),
+    #             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    #             yaxis=dict(showgrid=False, zeroline=False, tickvals=list(range(1,8)) , ticktext=GENERATION_LABELS))
+    #             )
+    # fig.show()
+
+    graph = {
+        "graph": {
+            "directed": True,
+            "metadata": {
+                'background_color': 'black',
+                "edge_color": "white",
+                "node_label_color": "white"
+            },
+            "nodes": gravis_nodes,
+            "edges": gravis_edges
+        } 
+    }
+
+    fig = gv.vis(graph, show_node_label=True, show_edge_label=False, node_label_data_source="en")
+    fig.display()
+
 def main():
-    global df_digi_chart, digi_ids_mode_change, df_digi_name
+    global df_digi_chart, digi_ids_mode_change, df_digi_name, df_digi_data
     global df_digi_count, df_digi_tracker, saves
 
     # Data cleanup
@@ -232,19 +413,21 @@ def main():
             # Build data frames
             df_digi_count = pl.DataFrame()
             df_digi_tracker = pl.DataFrame()
+            df_digi_name = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_name_data"]])).select(df_name_columns.keys()).rename(df_name_columns)
             df_digi_data = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_status_data"]]))\
                 .select(df_data_columns.keys())\
                 .rename(df_data_columns)\
                 .join(df_digi_generations, left_on="generation", right_on="internal_generation")\
-                .select(["id","name","common_generation","is_boss"])\
+                .join(df_digi_name, on="internal_name")\
+                .select(["id", "common_name", "common_generation","is_boss"])\
                 .rename({"common_generation": "generation"})
             df_digi_chart = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_evolution_data"]]))\
                 .select(df_chart_columns.keys())\
                 .rename(df_chart_columns)\
                 .join(df_digi_data, left_on="from_digimon_id", right_on="id", how="inner")\
                 .join(df_digi_data, left_on="to_digimon_id", right_on="id", how="inner")\
-                .rename({"name": "from_name", "generation": "from_generation", "name_right": "to_name", "generation_right": "to_generation"})
-            df_digi_name = cleanup_raw_columns(pl.concat([pl.read_csv(file_path) for file_path in csv_files["digimon_name_data"]])).select(df_name_columns.keys()).rename(df_name_columns)
+                .rename({"common_name": "from_name", "generation": "from_generation", "common_name_right": "to_name", "generation_right": "to_generation"})\
+                .select(["from_name", "from_generation", "from_digimon_id", "to_name", "to_generation", "to_digimon_id", "digivolution_type"])
             digi_ids_mode_change = df_digi_chart.filter(pl.col("digivolution_type") == 2)["to_digimon_id"].to_list()
 
             generation_list = sorted(pl.concat([df_digi_chart["from_generation"], df_digi_chart["to_generation"]]).unique().to_list())
@@ -270,10 +453,10 @@ def main():
             if len(df_digi_from_save) == 0:
                 continue
 
-            df_digi_from_save = df_digi_from_save.join(df_digi_data, left_on="internal_name", right_on="name")\
+            df_digi_from_save = df_digi_from_save.join(df_digi_data, on="common_name")\
                 .select(df_digi_from_save.columns + ["id", "generation"])
             df_digi_count = df_digi_count.join(df_digi_data, on="id", how="left")\
-                .select(["id","name", "count"])
+                .select(["id", "common_name", "count"])
             df_digi_tracker = df_digi_tracker.join(df_digi_data, on="id")\
                 .select(["origin_digimon_id", "id", "generation"])
 
@@ -282,7 +465,7 @@ def main():
             df_digi_data.write_csv("df_digi_data.csv")
             df_digi_name.write_csv("df_digi_name.csv")
             df_digi_chart.write_csv("df_digi_chart.csv")
-            df_digi_count.sort(["count", "name"], descending=[True, False]).write_csv("df_digi_count.csv")
+            df_digi_count.sort(["count", "common_name"], descending=[True, False]).write_csv("df_digi_count.csv")
             df_digi_tracker.sort(["origin_digimon_id", "generation"], descending=[False, True]).write_csv("df_digi_tracker.csv")
 
             # Calculate digimon needed
@@ -318,14 +501,17 @@ def main():
                         .alias("dropped")
                     )
 
-            df_digi_needed = df_digi_needed.filter(~pl.col("dropped"))\
-                                           .group_by("id")\
+            df_digi_tracker_2 = df_digi_needed.filter(~pl.col("dropped")).select(["origin_digimon_id","id","generation"])
+            df_digi_tracker_2.write_csv("df_digi_tracker_2.csv")
+
+            plot_digi_tracker(df_digi_tracker_2)
+
+            df_digi_needed = df_digi_tracker_2.group_by("id")\
                                            .agg(pl.len().alias("count"))\
                                            .join(df_digi_data, on="id")\
-                                           .join(df_digi_name, left_on="name", right_on="internal_name")\
                                            .select(["id", "common_name", "count"])\
                                            .rename({"common_name": "name"})
-            
+
             df_digi_needed = df_digi_needed.join(df_digi_data, on="id")\
                                            .select(["id", "name", "generation", "count"])
 
