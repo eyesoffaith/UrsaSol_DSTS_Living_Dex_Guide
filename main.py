@@ -334,7 +334,7 @@ def plot_digi_tracker(df: pl.DataFrame):
         node_names.append(f"[{row["id"]}] {row["common_name"]}")
 
         node_key = row["id"]
-        gravis_nodes[node_key] = {"metadata": {"color": node_color ,"en": f"[{row["id"]}] {row["common_name"]}"}}
+        gravis_nodes[node_key] = {"metadata": {"color": node_color ,"en": f"[{row["id"]}] {row["common_name"]} x{len(df.filter(pl.col("id") == row["id"]))}"}}
         if row_prev:
             node_key_prev = row_prev["id"]
             gravis_edges[f"{node_key_prev}:{node_key}"] = {"source": node_key_prev, "target": node_key}
