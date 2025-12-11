@@ -22,6 +22,7 @@ import customtkinter
 
 import plotly.graph_objects as go
 import networkx as nx
+import numpy as np
 import gravis as gv
 
 CHOSEN_SAVE_FILE = "0000.bin"
@@ -68,16 +69,16 @@ unpack_patterns = {
         "data/digimon_status*",
         "data/evolution*"
     ],
-    "addcont_17.dx11.mvgl": [
+    "addcont_[0-9][0-9].dx11.mvgl": [
         "data/digimon_status*",
         "data/evolution*"
     ],
     "patch_text01.dx11.mvgl": [
         "text/char_name*"
     ],
-    "addcont_17_text01.dx11.mvgl": [
+    "addcont_[0-9][0-9]_text01.dx11.mvgl": [
         "text/char_name*"
-    ],
+    ]
 }
 csv_files = {
     "digimon_status_data": [],
@@ -188,14 +189,16 @@ def decrypt_save(input_file_path: str, output_file_path: str):
         f_out.write(decrypted_data)
 
 def extract_data_from_game():
-    for mvgl_file_name in unpack_patterns:
-        # TODO: Save and uncomment when you can kick it off on game startup
-        # cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mvgl", "-i", f"{GAME_DIR}/gamedata/{mvgl_file_name}", "-o", f"unpacked/mvgl_unpacked/{mvgl_file_name}"]
-        # subprocess.run(cmd)
-        for mbe_pattern in unpack_patterns[mvgl_file_name]:
-            for file_path in glob.glob(f"unpacked/mvgl_unpacked/{mvgl_file_name}/{mbe_pattern}"):
-                cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", f"{file_path}", "-o", "unpacked/mbe_unpacked"]
-                subprocess.run(cmd)
+    for mvgl_file_pattern in unpack_patterns:
+        for mvgl_file_path in glob.glob(f"{GAME_DIR}/gamedata/{mvgl_file_pattern}"):
+            mvgl_file_name = os.path.basename(mvgl_file_path)
+            # TODO: Save and uncomment when you can kick it off on game startup
+            # cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mvgl", "-i", mvgl_file_path, "-o", f"unpacked/mvgl_unpacked/{mvgl_file_name}"]
+            # subprocess.run(cmd)
+            for mbe_pattern in unpack_patterns[mvgl_file_pattern]:
+                for mbe_file_path in glob.glob(f"unpacked/mvgl_unpacked/{mvgl_file_name}/{mbe_pattern}"):
+                    cmd = ["./MVGLTools/MVGLToolsCLI.exe", "-g", "dsts", "-m", "unpack-mbe", "-i", mbe_file_path, "-o", "unpacked/mbe_unpacked"]
+                    subprocess.run(cmd)
     for key in csv_patterns:
         csv_files[key] = glob.glob(f"unpacked/mbe_unpacked/{csv_patterns[key]}")
 
@@ -286,15 +289,6 @@ def plot_digi_chart():
     fig.show()
 
 def plot_digi_tracker(df: pl.DataFrame):
-    edge_trace = []
-    node_trace = []
-
-    edge_x = []
-    edge_y = []
-    node_x = []
-    node_y = []
-    node_names = []
-
     gravis_edges = {}
     gravis_nodes = {}
 
@@ -306,81 +300,34 @@ def plot_digi_tracker(df: pl.DataFrame):
         .sort(["origin_digimon_id", "generation"], descending=[False, False])
 
     row_prev = None
-    node_color = "#d3a437"
+    node_metadata_special = {"color": "#d3a437", "shape": "hexagon", "node_size": 50}
+    node_metadata_basic = {"color": "#ffffff", "shape": "circle"}
+    node_metadata = node_metadata_special
 
     for row in df.to_dicts():
-        # if row["origin_digimon_id"] == row["id"]:
-        #     continue
         if row_prev and row["origin_digimon_id"] != row_prev["origin_digimon_id"]:
-            node_color = "#d3a437"
+            node_metadata = node_metadata_special
             row_prev = None
 
-        x0, x1 = row["origin_digimon_id"], row["id"]
-        y0, y1 = row["origin_generation"], row["generation"]
-
-        edge_x.append(x0)
-        edge_x.append(x1)
-        edge_x.append(None)
-        edge_y.append(y0)
-        edge_y.append(y1)
-        edge_y.append(None)
-
-
-        node_x.append(x0)
-        node_y.append(y0)
-        node_names.append(f"[{row["origin_digimon_id"]}] {row["origin_name"]}")
-        node_x.append(x1)
-        node_y.append(y1)
-        node_names.append(f"[{row["id"]}] {row["common_name"]}")
-
         node_key = row["id"]
-        gravis_nodes[node_key] = {"metadata": {"color": node_color ,"en": f"[{row["id"]}] {row["common_name"]} x{len(df.filter(pl.col("id") == row["id"]))}"}}
+        if node_key not in gravis_nodes:
+            gravis_nodes[node_key] = {"metadata": node_metadata | {"en": f"[{row["id"]}] {row["common_name"]} x{len(df.filter(pl.col("id") == row["id"]))}"}}
         if row_prev:
             node_key_prev = row_prev["id"]
-            gravis_edges[f"{node_key_prev}:{node_key}"] = {"source": node_key_prev, "target": node_key}
+            edge_key = f"{node_key_prev}:{node_key}"
+            if edge_key not in gravis_edges:
+                gravis_edges[f"{node_key_prev}:{node_key}"] = {"source": node_key_prev, "target": node_key}
 
         row_prev = row
-        node_color = "#ffffff"
+        node_metadata = node_metadata_basic
 
     gravis_edges = list(gravis_edges.values())
-
-    edge_trace = go.Scatter(
-        x=edge_x, y=edge_y,
-        line=dict(width=0.5, color='#888'),
-        hoverinfo='none',
-        mode='lines')
-    
-    node_trace = go.Scatter(
-        x=node_x, y=node_y,
-        mode='markers',
-        hovertext=node_names,
-        hoverinfo='text',
-        marker=dict(
-            color=[],
-            size=10,
-            line_width=2))
-
-    # fig = go.Figure(data=[edge_trace, node_trace],
-    #          layout=go.Layout(
-    #             title=dict(
-    #                 text="<br>Network graph made with Python",
-    #                 font=dict(
-    #                     size=16
-    #                 )
-    #             ),
-    #             showlegend=False,
-    #             hovermode='closest',
-    #             margin=dict(b=20,l=5,r=5,t=40),
-    #             xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-    #             yaxis=dict(showgrid=False, zeroline=False, tickvals=list(range(1,8)) , ticktext=GENERATION_LABELS))
-    #             )
-    # fig.show()
 
     graph = {
         "graph": {
             "directed": True,
             "metadata": {
-                'background_color': 'black',
+                'background_color': 'blue',
                 "edge_color": "white",
                 "node_label_color": "white"
             },
@@ -391,6 +338,217 @@ def plot_digi_tracker(df: pl.DataFrame):
 
     fig = gv.vis(graph, show_node_label=True, show_edge_label=False, node_label_data_source="en")
     fig.display()
+
+def plot_digi_tracker_2(df: pl.DataFrame):   
+    edges = {}
+    nodes = {}
+
+    df = df.join(df_digi_data, left_on="origin_digimon_id", right_on="id")\
+        .rename({"generation_right": "origin_generation", "common_name": "origin_name"})\
+        .select(["origin_digimon_id", "origin_generation", "origin_name", "generation", "id"])\
+        .join(df_digi_data, on="id")\
+        .select(["origin_digimon_id", "origin_generation", "origin_name", "generation", "id", "common_name"])\
+        .sort(["origin_digimon_id", "generation"], descending=[False, False])
+
+    row_prev = None
+    node_metadata_special = {"color": "#d3a437", "shape": "hexagon", "node_size": 50}
+    node_metadata_basic = {"color": "#ffffff", "shape": "circle"}
+    node_metadata = node_metadata_special
+
+    for row in df.to_dicts():
+        if row_prev and row["origin_digimon_id"] != row_prev["origin_digimon_id"]:
+            node_metadata = node_metadata_special
+            row_prev = None
+
+        node_key = row["id"]
+        if node_key not in nodes:
+            nodes[node_key] = {"generation": row["generation"],"metadata": node_metadata | {"en": f"[{row["id"]}] {row["common_name"]} x{len(df.filter(pl.col("id") == row["id"]))}"}}
+        if row_prev:
+            node_key_prev = row_prev["id"]
+            edge_key = f"{node_key_prev}:{node_key}"
+            if edge_key not in edges:
+                edges[f"{node_key_prev}:{node_key}"] = {"source": node_key_prev, "target": node_key}
+
+        row_prev = row
+        node_metadata = node_metadata_basic
+
+    edges = list(edges.values())
+
+    # edge_list = [(edge["source"], edge["target"]) for edge in gravis_edges]
+    # nlist = [df.filter(pl.col("generation") == gen)["id"].to_list() for gen in range(1,8)]
+
+    # graph = nx.Graph(edge_list)
+    # pos = nx.spring_layout(graph, scale=3)
+    # for node, (x, y), in pos.items():
+    #     graph.nodes[node]["x"] = x * 1000
+    #     graph.nodes[node]["y"] = y * 1000
+    #     graph.nodes[node]["size"] = 10
+    #     graph.nodes[node]["en"] = str(node)
+    # fig = gv.d3(graph, layout_algorithm_active=False, use_collision_force=True, show_node_label=True, show_edge_label=False, node_label_data_source="en")
+    # fig.display()
+
+    graph = nx.DiGraph()
+    graph.add_nodes_from(
+        [(node_key, {"name": nodes[node_key]["metadata"]["en"], "generation": nodes[node_key]["generation"]}) for node_key in nodes]
+    )
+    graph.add_edges_from(
+        [(edge["source"], edge["target"]) for edge in edges]
+    )
+    pos = radial_layered_layout_balanced(graph)
+    for node, (x, y), in pos.items():
+        graph.nodes[node]["x"] = x * 100
+        graph.nodes[node]["y"] = y * 100
+        graph.nodes[node]["size"] = 10
+
+    fig = gv.d3(graph, layout_algorithm_active=False, use_collision_force=True, show_node_label=True, show_edge_label=False, node_label_data_source="name")
+    fig.display()
+
+
+    pass
+
+def radial_layered_layout(G, generation_attr='generation', min_radius=1, layer_spacing=1):
+    """
+    Creates a radial, layered layout prioritizing angular separation 
+    between branches originating from the lowest generation nodes.
+    """
+    pos = {}
+    
+    # --- 1. Identify Source Nodes and Generations ---
+    generations = {n: G.nodes[n].get(generation_attr, np.inf) for n in G.nodes}
+    min_gen = min(generations.values())
+    
+    source_nodes = [n for n, gen in generations.items() if gen == min_gen]
+    num_sources = len(source_nodes)
+    if num_sources == 0:
+        return nx.spring_layout(G)
+
+    # --- 2. Calculate Angular Sector for each Branch ---
+    angle_step = 2 * np.pi / num_sources
+    source_angles = {
+        node: i * angle_step
+        for i, node in enumerate(source_nodes)
+    }
+
+    # Map every node to its controlling source node and base angle
+    node_to_angle = {}
+    for node in source_nodes:
+        node_to_angle[node] = source_angles[node]
+        
+    # Find angle for all descendants (Breadth-First Search)
+    for source in source_nodes:
+        for node in nx.bfs_tree(G, source):
+            if node not in node_to_angle:
+                # Inherit the angle from the source ancestor
+                node_to_angle[node] = source_angles[source]
+
+    # --- 3. Place Nodes Radially and Layered ---
+    
+    # Used to track the number of nodes placed at a specific angle and generation
+    # for minor angular offset to prevent radial overlap
+    layer_counts = {}
+
+    for node in G.nodes:
+        gen = generations[node]
+        theta = node_to_angle.get(node, 0)
+        
+        # Calculate Radius (Y-axis separation)
+        r = min_radius + (gen - min_gen) * layer_spacing
+        
+        # Calculate minor Angular Offset (X-axis separation within layer)
+        # Key for tracking nodes per angle/layer combination
+        layer_key = (gen, round(theta, 3)) 
+        
+        # Get count and increment
+        count = layer_counts.get(layer_key, 0)
+        layer_counts[layer_key] = count + 1
+        
+        # Small angular adjustment based on count to prevent direct radial stacking
+        # This is a basic heuristic for X-spacing to avoid clutter
+        # We add a small fraction of the source's step angle, multiplied by the count
+        minor_offset = (angle_step / 10) * (count - (layer_counts.get(layer_key, 1) / 2))
+        
+        final_theta = theta + minor_offset
+        
+        # Calculate Position (X, Y)
+        x = r * np.cos(final_theta)
+        y = r * np.sin(final_theta)
+        
+        pos[node] = np.array([x, y])
+
+    return pos
+
+def radial_layered_layout_balanced(G, generation_attr='generation', min_radius=1.0, layer_spacing=1.0, angular_spread=0.15):
+    # The logic is identical to the previous step, as it already incorporates 
+    # the parent's calculated angle for the pivot point.
+    
+    pos = {}
+    generations = {n: G.nodes[n].get(generation_attr, np.inf) for n in G.nodes}
+    if not generations: return {}
+
+    min_gen = min(generations.values())
+    max_gen = max(generations.values())
+    
+    source_nodes = [n for n, gen in generations.items() if gen == min_gen]
+    num_sources = len(source_nodes)
+    if num_sources == 0: return nx.spring_layout(G)
+
+    node_angles = {}
+    
+    # 1. Place Source Nodes
+    angle_step = 2 * np.pi / num_sources
+    
+    for i, node in enumerate(source_nodes):
+        theta = i * angle_step
+        node_angles[node] = theta
+        
+        x = min_radius * np.cos(theta)
+        y = min_radius * np.sin(theta)
+        pos[node] = np.array([x, y])
+
+    # 2. Recursively Place Descendants
+    for current_gen in range(min_gen, max_gen):
+        parent_nodes = [n for n, gen in generations.items() if gen == current_gen and n in node_angles]
+        
+        # Calculate the radius for the next generation
+        next_gen = current_gen + 1
+        r = min_radius + (next_gen - min_gen) * layer_spacing
+        
+        for parent in parent_nodes:
+            children = list(G.successors(parent))
+            num_children = len(children)
+            
+            if num_children == 0:
+                continue
+
+            # The key is retrieving the parent's specific calculated angle (which includes its own offset)
+            base_theta = node_angles[parent]
+            
+            # Angular step size (d)
+            if num_children == 1:
+                step_d = 0
+            else:
+                # Distribute the total spread over the number of steps (N-1 gaps)
+                step_d = angular_spread / (num_children - 1)
+            
+            # Starting offset for perfect centering around base_theta
+            starting_offset = -(num_children - 1) / 2 * step_d
+
+            # Place Children
+            for i, child in enumerate(children):
+                
+                # Symmetrical offset calculation
+                offset = starting_offset + i * step_d
+                
+                # Child's final angle pivots around the parent's angle
+                final_theta = base_theta + offset
+                node_angles[child] = final_theta
+                
+                # Place the child
+                x = r * np.cos(final_theta)
+                y = r * np.sin(final_theta)
+                pos[child] = np.array([x, y])
+
+    return pos
 
 def main():
     global df_digi_chart, digi_ids_mode_change, df_digi_name, df_digi_data
@@ -505,6 +663,7 @@ def main():
             df_digi_tracker_2.write_csv("df_digi_tracker_2.csv")
 
             plot_digi_tracker(df_digi_tracker_2)
+            plot_digi_tracker_2(df_digi_tracker_2)
 
             df_digi_needed = df_digi_tracker_2.group_by("id")\
                                            .agg(pl.len().alias("count"))\
